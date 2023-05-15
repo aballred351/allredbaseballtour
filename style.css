@@ -46,7 +46,7 @@ body {
     background-color: red;
 }
 
-body img{
-    height: "200px";
-    width: "300px";
+.homepage img{
+    width: 250px;
+    height: 400px;
 }
