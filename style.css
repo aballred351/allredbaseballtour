@@ -45,3 +45,8 @@ ul li a:hover{
 body {
     background-color: red;
 }
+
+body img{
+    height: "200px";
+    width: "300px";
+}
