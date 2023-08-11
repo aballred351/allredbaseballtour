@@ -44,3 +44,15 @@ body {
 .nav-links a:hover {
     color: #ff9900;
 }
+
+table, th, td {
+    border: 1px solid;
+  }
+
+th{
+    font-weight: bold;
+}
+
+.date{
+    align-items: right;
+}
