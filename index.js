@@ -19,7 +19,7 @@ app.post('/submit', (req, res) => {
   games.push(newGame);
   fs.writeFileSync(filePath, JSON.stringify(games, null, 2));
 
-  res.redirect('/games');
+  res.redirect('/admin');
 });
 
 app.get('/api/games', (req, res) => {
