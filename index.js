@@ -1,78 +1,64 @@
-// index.js
-const express     = require('express');
-const bodyParser  = require('body-parser');
-const { Pool }    = require('pg');
-const path        = require('path');
+// index.js  – Postgres-only version
+const express    = require('express');
+const bodyParser = require('body-parser');
+const path       = require('path');
+const { Pool }   = require('pg');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-/* -----------------------------------------------------------
-   1.  PostgreSQL connection (Railway injects DATABASE_URL)
-   --------------------------------------------------------- */
+/* ---------- PostgreSQL connection ---------- */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }   // needed for Railway’s managed SSL
+  ssl: { rejectUnauthorized: false }   // required on Railway
 });
 
-/* Ensure the table exists every time the server boots */
+/* Create table if it doesn't exist */
 (async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS games (
-        id          SERIAL PRIMARY KEY,
-        home_team   TEXT NOT NULL,
-        away_team   TEXT NOT NULL,
-        home_score  INT  NOT NULL,
-        away_score  INT  NOT NULL,
-        game_date   DATE NOT NULL,
-        notes       TEXT
-      );
-    `);
-    console.log('✅ Connected to Postgres & ensured "games" table exists');
-  } catch (err) {
-    console.error('❌ Error setting up database:', err);
-  }
-})();
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS games (
+      id          SERIAL PRIMARY KEY,
+      home_team   TEXT NOT NULL,
+      away_team   TEXT NOT NULL,
+      home_score  INT  NOT NULL,
+      away_score  INT  NOT NULL,
+      game_date   DATE NOT NULL,
+      notes       TEXT
+    );
+  `);
+  console.log('✅ Connected to Postgres and ensured table exists');
+})().catch(err => {
+  console.error('❌ DB init failed:', err);
+  process.exit(1);                    // stop container so Railway logs the error
+});
 
-/* -----------------------------------------------------------
-   2.  Middleware + static files
-   --------------------------------------------------------- */
+/* ---------- Middleware ---------- */
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-/* -----------------------------------------------------------
-   3.  Routes
-   --------------------------------------------------------- */
-// Landing → redirect to public list
-app.get('/', (req, res) => res.redirect('/games'));
+/* ---------- Routes ---------- */
+app.get('/',        (req, res) => res.redirect('/games'));
+app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin.html')));
+app.get('/games',   (req, res) => res.sendFile(path.join(__dirname, 'views', 'games.html')));
 
-// HTML pages
-app.get('/admin', (req, res) =>
-  res.sendFile(path.join(__dirname, 'views', 'admin.html'))
-);
-app.get('/games', (req, res) =>
-  res.sendFile(path.join(__dirname, 'views', 'games.html'))
-);
-
-// Submit game (writes to DB, then returns to empty form)
+/* Add a game, then go back to empty form */
 app.post('/submit', async (req, res) => {
-  const { homeTeam, awayTeam, homeScore, awayScore, date, notes } = req.body;
   try {
+    const { homeTeam, awayTeam, homeScore, awayScore, date, notes } = req.body;
     await pool.query(
       `INSERT INTO games
        (home_team, away_team, home_score, away_score, game_date, notes)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       VALUES ($1,$2,$3,$4,$5,$6)`,
       [homeTeam, awayTeam, homeScore, awayScore, date, notes]
     );
-    res.redirect('/admin');           // 👈 stays on the form
+    res.redirect('/admin');           // <— stays on admin form
   } catch (err) {
-    console.error('❌ Error inserting game:', err);
+    console.error('❌ Insert failed:', err);
     res.status(500).send('Database error');
   }
 });
 
-// JSON API (public page fetches this)
+/* JSON for the public list */
 app.get('/api/games', async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -80,14 +66,10 @@ app.get('/api/games', async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('❌ Error fetching games:', err);
+    console.error('❌ Select failed:', err);
     res.status(500).send('Database error');
   }
 });
 
-/* -----------------------------------------------------------
-   4.  Start server
-   --------------------------------------------------------- */
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on port ${PORT}`)
-);
+/* ---------- Start server ---------- */
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
