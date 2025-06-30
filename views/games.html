@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Baseball Games</title>
+</head>
+<body>
+  <h1>Baseball Games</h1>
+  <ul id="gameList"></ul>
+
+  <script>
+    fetch('/api/games')
+      .then(res => res.json())
+      .then(games => {
+        const list = document.getElementById('gameList');
+        games.forEach(game => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${game.awayTeam}</strong> ${game.awayScore} @ <strong>${game.homeTeam}</strong> ${game.homeScore} — ${game.date}<br>${game.notes}`;
+          list.appendChild(li);
+        });
+      });
+  </script>
+</body>
+</html>
