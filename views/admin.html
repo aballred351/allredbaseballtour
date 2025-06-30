@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - Add Game</title>
+</head>
+<body>
+  <h1>Add a Baseball Game</h1>
+  <form action="/submit" method="POST">
+    <label>Home Team: <input name="homeTeam" required></label><br>
+    <label>Away Team: <input name="awayTeam" required></label><br>
+    <label>Home Score: <input name="homeScore" type="number" required></label><br>
+    <label>Away Score: <input name="awayScore" type="number" required></label><br>
+    <label>Date: <input name="date" type="date" required></label><br>
+    <label>Notes: <textarea name="notes"></textarea></label><br>
+    <button type="submit">Submit</button>
+  </form>
+</body>
+</html>
